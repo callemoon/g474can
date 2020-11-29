@@ -42,6 +42,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 FDCAN_HandleTypeDef hfdcan1;
+FDCAN_HandleTypeDef hfdcan2;
 
 /* USER CODE BEGIN PV */
 
@@ -51,6 +52,7 @@ FDCAN_HandleTypeDef hfdcan1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
+static void MX_FDCAN2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -110,10 +112,6 @@ void CANCallbackRx(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
   * @brief  The application entry point.
   * @retval int
   */
-
-void c2c_init();
-void c2c_execute();
-
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -139,7 +137,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_FDCAN1_Init();
-
+  MX_FDCAN2_Init();
   /* USER CODE BEGIN 2 */
   HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_LIST_RX_FIFO0, 0);
 
@@ -154,6 +152,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
 	c2c_execute();
   }
@@ -222,7 +222,7 @@ static void MX_FDCAN1_Init(void)
 
   /* USER CODE END FDCAN1_Init 1 */
   hfdcan1.Instance = FDCAN1;
-  hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV8;
+  hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV16;
   hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
   hfdcan1.Init.AutoRetransmission = DISABLE;
@@ -250,6 +250,48 @@ static void MX_FDCAN1_Init(void)
 }
 
 /**
+  * @brief FDCAN2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_FDCAN2_Init(void)
+{
+
+  /* USER CODE BEGIN FDCAN2_Init 0 */
+
+  /* USER CODE END FDCAN2_Init 0 */
+
+  /* USER CODE BEGIN FDCAN2_Init 1 */
+
+  /* USER CODE END FDCAN2_Init 1 */
+  hfdcan2.Instance = FDCAN2;
+  hfdcan2.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+  hfdcan2.Init.Mode = FDCAN_MODE_NORMAL;
+  hfdcan2.Init.AutoRetransmission = DISABLE;
+  hfdcan2.Init.TransmitPause = DISABLE;
+  hfdcan2.Init.ProtocolException = DISABLE;
+  hfdcan2.Init.NominalPrescaler = 1;
+  hfdcan2.Init.NominalSyncJumpWidth = 1;
+  hfdcan2.Init.NominalTimeSeg1 = 5;
+  hfdcan2.Init.NominalTimeSeg2 = 2;
+  hfdcan2.Init.DataPrescaler = 1;
+  hfdcan2.Init.DataSyncJumpWidth = 1;
+  hfdcan2.Init.DataTimeSeg1 = 5;
+  hfdcan2.Init.DataTimeSeg2 = 2;
+  hfdcan2.Init.StdFiltersNbr = 0;
+  hfdcan2.Init.ExtFiltersNbr = 0;
+  hfdcan2.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+  if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN FDCAN2_Init 2 */
+
+  /* USER CODE END FDCAN2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -258,6 +300,7 @@ static void MX_GPIO_Init(void)
 {
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
 }
