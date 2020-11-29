@@ -65,6 +65,7 @@ static void MX_FDCAN2_Init(void);
 #include <stdint.h>
 #include <string.h>
 
+// TODO: can we move this define?
 typedef unsigned short word_t;
 typedef unsigned char byte_t;
 typedef unsigned long dword_t;
@@ -78,11 +79,11 @@ typedef struct {
   byte_t data[8];
 } canPacket_t;
 
-void (*callback)(canPacket_t* receivedPacket);
+void (*CANrxCallback)(canPacket_t* receivedPacket) = 0;
 
 void SetRxCallbackFunction3(int bus, void (*function)(canPacket_t* receivedPacket))
 {
-	callback = function;
+	CANrxCallback = function;
 }
 
 void CANCallbackRx(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
@@ -92,7 +93,7 @@ void CANCallbackRx(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 	while(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0))
 	{
-		if(HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, &rxData) == HAL_OK)
+		if(HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, (uint8_t *)&rxData) == HAL_OK)
 		{
 			canPacket_t packet;
 
@@ -102,10 +103,14 @@ void CANCallbackRx(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			packet.dlc = rxHeader.DataLength >> 16;
 			packet.rtrtag = 0;
 
-			callback(&packet);
+			CANrxCallback(&packet);
 		}
 	}
 }
+
+void c2c_init();
+void c2c_execute();
+
 /* USER CODE END 0 */
 
 /**
