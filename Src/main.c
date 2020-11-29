@@ -59,6 +59,30 @@ static void MX_FDCAN1_Init(void);
 /* USER CODE BEGIN 0 */
 #include <stdio.h>
 
+#include "common_types.h"
+#include <stdint.h>
+#include <string.h>
+
+typedef unsigned short word_t;
+typedef unsigned char byte_t;
+typedef unsigned long dword_t;
+
+typedef struct {
+  byte_t rxFlag : 1;
+  byte_t extended : 1;
+  byte_t dlc : 4;
+  byte_t rtrtag : 1;
+  dword_t id;
+  byte_t data[8];
+} canPacket_t;
+
+void (*callback)(canPacket_t* receivedPacket);
+
+void SetRxCallbackFunction3(int bus, void (*function)(canPacket_t* receivedPacket))
+{
+	callback = function;
+}
+
 void CANCallbackRx(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
 	FDCAN_RxHeaderTypeDef rxHeader;
@@ -68,7 +92,15 @@ void CANCallbackRx(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	{
 		if(HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, &rxData) == HAL_OK)
 		{
-			//printf("ok %d %d\r\n", rxHeader.Identifier, rxHeader.DataLength >> 4);
+			canPacket_t packet;
+
+			packet.id = rxHeader.Identifier;
+			packet.extended = 0;
+		    memcpy(packet.data, rxData, 8);
+			packet.dlc = rxHeader.DataLength >> 16;
+			packet.rtrtag = 0;
+
+			callback(&packet);
 		}
 	}
 }
@@ -79,6 +111,8 @@ void CANCallbackRx(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
   * @retval int
   */
 
+void c2c_init();
+void c2c_execute();
 
 int main(void)
 {
@@ -113,22 +147,7 @@ int main(void)
 
   HAL_FDCAN_Start(&hfdcan1);
 
-  FDCAN_TxHeaderTypeDef header;
-  uint8_t data[8];
-
-  header.Identifier = 0x123;
-  header.IdType = FDCAN_STANDARD_ID;
-  header.TxFrameType = FDCAN_DATA_FRAME;
-  header.DataLength = FDCAN_DLC_BYTES_8;
-  header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-  header.BitRateSwitch = FDCAN_BRS_OFF;
-  header.FDFormat = FDCAN_CLASSIC_CAN;
-  header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-
-  if(HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &header, data) != HAL_OK)
-  {
-	// TODO: handle error
-  }
+  c2c_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -136,6 +155,7 @@ int main(void)
   while (1)
   {
     /* USER CODE BEGIN 3 */
+	c2c_execute();
   }
   /* USER CODE END 3 */
 }
